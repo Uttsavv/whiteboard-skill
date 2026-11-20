@@ -67,15 +67,26 @@
     head.appendChild(side);
     head.setAttribute('role', 'button');
     head.tabIndex = 0;
-    var toggle = function () { setFold(b, !b.classList.contains('folded')); };
+    var toggle = function () { setFold(b, !b.classList.contains('folded'), true); };
     head.addEventListener('click', function (e) { if (!(e.target.closest && e.target.closest('a'))) toggle(); });
     head.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
     setFold(b, true);
   });
-  function setFold(b, folded) {
+  var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function setFold(b, folded, animate) {
+    var body = $('.fold-body', b);
+    var from = body.hidden ? 0 : body.getBoundingClientRect().height;
+    if (b._anim) { b._anim.cancel(); b._anim = null; }
     b.classList.toggle('folded', folded);
-    $('.fold-body', b).hidden = folded;
     $('.board-head', b).setAttribute('aria-expanded', String(!folded));
+    body.hidden = false;
+    var to = folded ? 0 : body.scrollHeight;
+    if (!animate || calm || !body.animate) { body.hidden = folded; return; }
+    body.style.overflow = 'hidden';
+    var a = b._anim = body.animate(
+      [{ height: from + 'px', opacity: folded ? 1 : 0 }, { height: to + 'px', opacity: folded ? 0 : 1 }],
+      { duration: Math.min(320, 160 + Math.abs(to - from) / 6), easing: 'cubic-bezier(.2,.7,.2,1)' });
+    a.onfinish = function () { body.style.overflow = ''; body.hidden = folded; b._anim = null; };
   }
   function reveal(node) {
     var b = node && node.closest && node.closest('section.board[data-fold]');

@@ -151,11 +151,11 @@ section.board[data-fold] > .board-head{display:grid;grid-template-columns:minmax
 section.board[data-fold] > .board-head > :not(.fold-side){grid-column:1}
 section.board[data-fold] > .board-head:focus-visible{outline:2px solid var(--accent);outline-offset:6px}
 .fold-side{grid-column:2;grid-row:1/span 3;align-self:center;display:flex;align-items:center;gap:12px}
-.fold-chev{width:9px;height:9px;border-right:2px solid var(--soft);border-bottom:2px solid var(--soft);transform:rotate(45deg) translate(-2px,-2px);transition:transform .15s}
-section.board.folded .fold-chev{transform:rotate(-45deg)}
-.fold-body{display:flex;flex-direction:column;gap:18px;min-width:0}
+.fold-chev{width:9px;height:9px;border-right:2px solid var(--soft);border-bottom:2px solid var(--soft);transform:translateY(2px) rotate(-135deg);transition:transform .22s cubic-bezier(.2,.7,.2,1)}
+section.board.folded .fold-chev{transform:translateY(-2px) rotate(45deg)}
+section.board[data-fold]{gap:0}
+.fold-body{display:flex;flex-direction:column;gap:18px;padding-top:18px;min-width:0}
 .fold-body[hidden]{display:none}
-section.board.folded{gap:0}
 @media (prefers-reduced-motion:reduce){.fold-chev{transition:none}}
 .rail ol a .count{margin-left:auto;font-size:11px;font-weight:700;min-width:18px;height:18px;padding:0 5px;border-radius:999px;display:inline-grid;place-items:center;background:var(--warn-tint);color:var(--warn)}
 .rail ol a .count + .dot{margin-left:6px}
@@ -521,15 +521,26 @@ sequenceDiagram
     head.appendChild(side);
     head.setAttribute('role', 'button');
     head.tabIndex = 0;
-    var toggle = function () { setFold(b, !b.classList.contains('folded')); };
+    var toggle = function () { setFold(b, !b.classList.contains('folded'), true); };
     head.addEventListener('click', function (e) { if (!(e.target.closest && e.target.closest('a'))) toggle(); });
     head.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
     setFold(b, true);
   });
-  function setFold(b, folded) {
+  var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function setFold(b, folded, animate) {
+    var body = $('.fold-body', b);
+    var from = body.hidden ? 0 : body.getBoundingClientRect().height;
+    if (b._anim) { b._anim.cancel(); b._anim = null; }
     b.classList.toggle('folded', folded);
-    $('.fold-body', b).hidden = folded;
     $('.board-head', b).setAttribute('aria-expanded', String(!folded));
+    body.hidden = false;
+    var to = folded ? 0 : body.scrollHeight;
+    if (!animate || calm || !body.animate) { body.hidden = folded; return; }
+    body.style.overflow = 'hidden';
+    var a = b._anim = body.animate(
+      [{ height: from + 'px', opacity: folded ? 1 : 0 }, { height: to + 'px', opacity: folded ? 0 : 1 }],
+      { duration: Math.min(320, 160 + Math.abs(to - from) / 6), easing: 'cubic-bezier(.2,.7,.2,1)' });
+    a.onfinish = function () { body.style.overflow = ''; body.hidden = folded; b._anim = null; };
   }
   function reveal(node) {
     var b = node && node.closest && node.closest('section.board[data-fold]');
