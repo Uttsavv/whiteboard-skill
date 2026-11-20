@@ -1,0 +1,9 @@
+{
+  "name": "whiteboard",
+  "description": "Draw a feature's system design as an interactive whiteboard page that doubles as the spec.",
+  "author": { "name": "Utsav Singh", "url": "https://github.com/Uttsavv" },
+  "homepage": "https://github.com/Uttsavv/whiteboard-skill",
+  "repository": "https://github.com/Uttsavv/whiteboard-skill",
+  "license": "MIT",
+  "keywords": ["system-design", "spec", "whiteboard", "planning", "mermaid"]
+}

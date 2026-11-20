@@ -1,0 +1,214 @@
+<header class="board hero" data-rev="2" data-date="2026-11-20">
+  <h1>Saved filters</h1>
+  <p>Let sales reps save the current Leads filters under a name, pin them as tabs, and share them with their team. A saved filter is only a named URL query string; the list endpoint does not change.</p>
+  <div class="meta"><span>rev 2 · 2026-11-20</span><span class="chip accent">Draft</span><span class="chip warn">2 open questions</span></div>
+  <ul class="changes">
+    <li><a href="#data">Data</a>: dropped the separate <code>saved_filter_shares</code> table; sharing is a column.</li>
+    <li><a href="#plan">Plan</a>: sharing moved from phase 1 to phase 2.</li>
+  </ul>
+  <dl class="facts">
+    <div data-tag="storage"><dt>Storage</dt><dd>Query string in Postgres<span class="muted">one row per filter, no new filter engine</span></dd><dd class="st"><span class="chip ok">Decided</span></dd></div>
+    <div data-tag="scope"><dt>Scope</dt><dd>Leads list only<span class="muted">other lists reuse the table via <code>surface</code></span></dd><dd class="st"><span class="chip ok">Decided</span></dd></div>
+    <div data-tag="sharing"><dt>Sharing</dt><dd>Private or whole team<span class="muted">no per-person sharing</span></dd><dd class="st"><span class="chip accent">Proposed</span></dd></div>
+    <div data-tag="limit"><dt>Pinned tabs</dt><dd>Cap to be decided<span class="muted">see <a href="#open">open questions</a></span></dd><dd class="st"><span class="chip warn">Open</span></dd></div>
+  </dl>
+</header>
+
+<section class="board" id="open" data-nav="Open questions">
+  <div class="board-head"><span class="eyebrow">Open questions</span><h2>Two answers unblock the build</h2>
+  <p class="muted">Pick an option, or leave a note on anything else. Then press “review &amp; copy” and paste into the chat.</p></div>
+  <div class="grid g2">
+    <div class="question" data-tag="pin-limit">
+      <h3>How many filters can a rep pin as tabs?</h3>
+      <p class="muted">Tabs sit above the list. On a 360px phone, four fit before the row scrolls.</p>
+      <div class="options">
+        <button type="button" class="opt" data-rec>Cap at 5 <small>Scrolls on phones, never wraps. Extra filters live in the “More” menu.</small></button>
+        <button type="button" class="opt">No cap <small>Simplest to build; long tab rows on desktop.</small></button>
+      </div>
+    </div>
+    <div class="question" data-tag="stale-filter">
+      <h3>What happens when a saved filter names a field that was removed?</h3>
+      <p class="muted">Example: a filter on <code>region</code> after regions are merged.</p>
+      <div class="options">
+        <button type="button" class="opt" data-rec>Drop the dead clause, show a notice <small>The rest of the filter still works.</small></button>
+        <button type="button" class="opt">Mark the filter broken <small>Rep must fix or delete it.</small></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="board" id="scope" data-nav="Scope">
+  <div class="board-head"><span class="eyebrow">Scope</span><h2>What this builds, and what it leaves alone</h2></div>
+  <div class="cols-inout">
+    <div class="card"><span class="chip ok">In</span><ul class="clean">
+      <li>Save the current Leads filters under a name.</li>
+      <li>Pin, rename, reorder and delete your own saved filters.</li>
+      <li>Share a saved filter with your team (read-only for them).</li>
+    </ul></div>
+    <div class="card"><span class="chip bad">Out</span><ul class="clean">
+      <li>New filter fields or operators.</li>
+      <li>Saved filters on Opportunities or Accounts.</li>
+      <li>Email digests or alerts driven by a saved filter.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section class="board" id="system" data-nav="System">
+  <div class="board-head"><span class="eyebrow">Whole system</span><h2>A saved filter is a named query string</h2>
+  <p class="muted">The Leads list already reads every filter from the URL. Saving stores that string; applying one navigates to it. The list endpoint is untouched.</p></div>
+  <div class="diagram" data-tag="map">
+    <pre class="mermaid">
+flowchart LR
+  subgraph WEB["Web app"]
+    L["Leads list page"]:::ext
+    T["Saved-filter tabs"]:::new
+    S["Save filter dialog"]:::new
+  end
+  subgraph API["Backend"]
+    R["/saved-filters router"]:::new
+    V["Filter validator"]:::new
+    LL["GET /leads"]:::ext
+  end
+  DB[("saved_filters")]:::new
+  L --> T
+  L --> S
+  T -- "navigate to ?query" --> L
+  S -- "POST" --> R
+  T -- "GET" --> R
+  R --> V
+  R --> DB
+  L -- "unchanged" --> LL
+    </pre>
+    <div class="legend"><span><i class="new"></i>New in this feature</span><span><i class="ext"></i>Exists today, unchanged</span></div>
+  </div>
+</section>
+
+<section class="board" id="flow" data-nav="Flow">
+  <div class="board-head"><span class="eyebrow">Runtime flow</span><h2>Save once, apply with one tap</h2></div>
+  <div class="diagram" data-tag="save-apply">
+    <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  actor Rep
+  participant List as Leads list
+  participant API as /saved-filters
+  participant DB as Postgres
+  Rep->>List: sets filters, taps Save
+  List->>API: POST name + query string
+  API->>API: validate fields against the filter schema
+  API->>DB: insert saved_filters row
+  API-->>List: 201 saved filter
+  List-->>Rep: new tab appears, selected
+  Rep->>List: taps the tab next morning
+  List->>List: navigate to stored query string
+  Note over List,API: The list fetch is the same GET /leads as today
+    </pre>
+  </div>
+  <div class="card" data-tag="rules"><h3>Rules</h3>
+    <ul class="clean">
+      <li>Names are unique per owner, 1 to 40 characters.</li>
+      <li>A shared filter is read-only for everyone but its owner.</li>
+      <li>Editing the filters while a tab is selected shows “Update” next to Save.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="board" id="data" data-nav="Data">
+  <div class="board-head"><span class="eyebrow">Schema</span><h2>One new table</h2>
+  <p class="muted">No changes to existing tables.</p></div>
+  <div class="grid g2">
+    <div class="card" data-tag="saved-filters" data-changed><h3><code>saved_filters</code> <span class="chip ok">new</span></h3>
+      <div class="tbl"><table><tbody>
+        <tr><td><code>id</code></td><td>uuid pk</td></tr>
+        <tr><td><code>owner_id</code></td><td>uuid fk users</td></tr>
+        <tr><td><code>surface</code></td><td>text, <code>leads</code> for now</td></tr>
+        <tr><td><code>name</code></td><td>text</td></tr>
+        <tr><td><code>query</code></td><td>text, the URL query string</td></tr>
+        <tr data-changed><td><code>shared_with_team</code></td><td>bool, default false</td></tr>
+        <tr><td><code>pinned_position</code></td><td>int null, null means not pinned</td></tr>
+        <tr><td colspan="2" class="muted">unique (owner_id, surface, name)</td></tr>
+      </tbody></table></div>
+    </div>
+    <div class="card" data-tag="example-row"><h3>Example row</h3>
+<pre class="code">{
+  <span class="s">"name"</span>: <span class="s">"Hot leads, north"</span>,
+  <span class="s">"surface"</span>: <span class="s">"leads"</span>,
+  <span class="s">"query"</span>: <span class="s">"status=hot&amp;region=north&amp;sort=-updated"</span>,
+  <span class="s">"shared_with_team"</span>: <span class="k">false</span>,
+  <span class="s">"pinned_position"</span>: 1
+}</pre>
+    </div>
+  </div>
+</section>
+
+<section class="board" id="api" data-nav="API">
+  <div class="board-head"><span class="eyebrow">Contracts</span><h2>Four endpoints, all owner-scoped</h2></div>
+  <div class="tbl"><table>
+    <thead><tr><th>Method · path</th><th>Who</th><th>Does</th></tr></thead>
+    <tbody>
+      <tr data-tag="list"><td><code>GET /saved-filters?surface=leads</code></td><td>any user</td><td>Own filters plus team-shared ones, pinned first.</td></tr>
+      <tr data-tag="create"><td><code>POST /saved-filters</code></td><td>any user</td><td>Validates the query string, then inserts. 409 on a duplicate name.</td></tr>
+      <tr data-tag="update"><td><code>PATCH /saved-filters/{id}</code></td><td>owner</td><td>Rename, re-pin, update query, toggle sharing.</td></tr>
+      <tr data-tag="delete"><td><code>DELETE /saved-filters/{id}</code></td><td>owner</td><td>Removes it for the team as well.</td></tr>
+    </tbody></table></div>
+</section>
+
+<section class="board" id="files" data-nav="Files">
+  <div class="board-head"><span class="eyebrow">Files</span><h2>Where the change lands</h2>
+  <p class="muted"><span class="new">Green</span> is new, <span class="chg">amber</span> is an existing file that changes.</p></div>
+  <div class="grid g2">
+<pre class="tree" data-tag="web">web/src/
+├─ pages/leads/
+│  ├─ <span class="chg">leads-page.tsx</span>          mounts the tab row
+│  ├─ <span class="new">saved-filter-tabs.tsx</span>
+│  └─ <span class="new">save-filter-dialog.tsx</span>
+└─ services/<span class="new">saved-filters/</span>     api.ts, hooks.ts</pre>
+<pre class="tree" data-tag="backend">backend/app/
+├─ api/<span class="new">saved_filters/</span>         router, schema, service
+├─ models/<span class="new">saved_filter.py</span>
+├─ <span class="chg">api/leads/filters.py</span>       exports the field list
+└─ migrations/<span class="new">0042_saved_filters.py</span></pre>
+  </div>
+</section>
+
+<section class="board" id="ui" data-nav="UI">
+  <div class="board-head"><span class="eyebrow">UI</span><h2>Tabs above the list, save beside the filters</h2>
+  <p class="muted">Wireframes, not final visuals. The outlined parts are new.</p></div>
+  <figure class="mock" data-tag="leads-desktop">
+    <div class="desk">
+      <div class="desk-top"><i></i><i></i><i></i><span>crm / leads</span></div>
+      <div class="desk-body">
+        <div class="m-side"><span>Home</span><span class="on">Leads</span><span>Opportunities</span><span>Accounts</span></div>
+        <div class="m-main">
+          <div class="m-row m-new" data-tag="tab-row"><span class="m-pill">All leads</span><span class="m-btn">Hot leads, north</span><span class="m-pill">Stale 14d</span><span class="m-pill">Team: renewals</span><span class="sp"></span><span class="muted">More ▾</span></div>
+          <div class="m-row"><span class="m-btn ghost">Status: hot</span><span class="m-btn ghost">Region: north</span><span class="sp"></span><span class="m-btn m-new" data-tag="save-button">Save filter</span></div>
+          <div class="m-row m-col"><span class="sk"></span><span class="sk"></span></div>
+          <div class="m-row m-col"><span class="sk"></span><span class="sk"></span></div>
+          <div class="m-row m-col"><span class="sk"></span><span class="sk"></span></div>
+        </div>
+      </div>
+    </div>
+    <figcaption>Leads list with three pinned filters and one shared by the team.</figcaption>
+  </figure>
+</section>
+
+<section class="board" id="risks" data-nav="Risks">
+  <div class="board-head"><span class="eyebrow">Risks</span><h2>What can go wrong, worst first</h2></div>
+  <div class="grid g3">
+    <div class="card" data-tag="stale-fields"><span class="chip bad">Must handle</span><h3>Filter fields change</h3><p class="muted">A stored query string can name a field that no longer exists. The validator runs on read as well as on write; see the open question for what the rep sees.</p></div>
+    <div class="card" data-tag="shared-leak"><span class="chip bad">Must handle</span><h3>Sharing shows more than intended</h3><p class="muted">A shared filter shares the query, never the rows. Each viewer still gets only the leads their own permissions allow.</p></div>
+    <div class="card" data-tag="name-clash"><span class="chip">Noted</span><h3>Name clashes with a team filter</h3><p class="muted">Allowed. Team filters carry a “Team:” prefix in the tab.</p></div>
+  </div>
+</section>
+
+<section class="board" id="plan" data-nav="Plan">
+  <div class="board-head"><span class="eyebrow">Plan</span><h2>Two phases, each shippable</h2></div>
+  <div>
+    <div class="phase" data-tag="phase-1"><div><span class="chip accent">Phase 1</span></div><div><h3>Private saved filters</h3>
+      <ul class="clean"><li>Table, four endpoints, validator.</li><li>Tab row, save dialog, rename and delete.</li></ul>
+      <p class="accept">A rep saves a filter, reloads, taps its tab and sees the same leads. Deleting a filter field from the schema does not break the list.</p></div></div>
+    <div class="phase" data-tag="phase-2" data-changed><div><span class="chip accent">Phase 2</span></div><div><h3>Team sharing and pin order</h3>
+      <ul class="clean"><li>Share toggle, “Team:” tabs, drag to reorder.</li></ul>
+      <p class="accept">A teammate sees a shared filter as a read-only tab and gets only their own leads through it.</p></div></div>
+  </div>
+</section>

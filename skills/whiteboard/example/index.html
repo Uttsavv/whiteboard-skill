@@ -1,0 +1,713 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Saved filters · whiteboard</title>
+<script>(function(){var t;try{t=localStorage.getItem('wb-theme')}catch(e){}if(t!=='light'&&t!=='dark')t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t})()</script>
+<style>
+
+/* Whiteboard kit. Every colour, font and radius comes from the tokens below.
+   A board's theme.css overrides tokens only; see DESIGN-SYSTEM.md. Token colours are hex (diagrams read them). */
+:root{
+  --ground:#f5f6f8; --dot:#dcdfe6; --board:#ffffff; --ink:#171a21; --soft:#5a6172; --line:#e2e5eb;
+  --accent:#1f6feb; --accent-tint:#e9f2fe; --accent-ink:#1458c2;
+  --ok:#18794e; --ok-tint:#e4f5ec; --warn:#955800; --warn-tint:#fdf1dc; --bad:#b3261e; --bad-tint:#fde8e6;
+  --code-bg:#f5f6f9;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --radius:16px; --radius-sm:10px;
+}
+:root[data-theme="dark"]{
+  --ground:#131419; --dot:#23252e; --board:#1b1d24; --ink:#eceef3; --soft:#a1a7b6; --line:#2d3039;
+  --accent:#4c9cf5; --accent-tint:#13253a; --accent-ink:#8cc2fa;
+  --ok:#5fd39a; --ok-tint:#16301f; --warn:#f0b061; --warn-tint:#3a2a14; --bad:#ff8a84; --bad-tint:#3b1c1c;
+  --code-bg:#16181e; color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:20px}
+body{margin:0;background:var(--ground);background-image:radial-gradient(var(--dot) 1px,transparent 1px);background-size:22px 22px;color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{margin:0;line-height:1.2;text-wrap:balance}
+h1{font-size:26px;font-weight:700;letter-spacing:-.015em}
+h2{font-size:22px;font-weight:700;letter-spacing:-.01em}
+h3{font-size:16px;font-weight:650}
+h4{font-size:14px;font-weight:650}
+p{margin:0;max-width:72ch}
+a{color:var(--accent-ink)}
+code,.mono{font-family:var(--mono);font-size:.86em}
+.muted{color:var(--soft)}
+.eyebrow{font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink)}
+button{font:inherit;color:inherit}
+
+/* ---------- shell: rail + boards ---------- */
+.shell{display:grid;grid-template-columns:232px minmax(0,1fr);gap:28px;max-width:1380px;margin:0 auto;padding:28px 20px 120px}
+.wrap{display:flex;flex-direction:column;gap:24px;min-width:0;counter-reset:board}
+.rail{position:sticky;top:20px;align-self:start;max-height:calc(100vh - 40px);overflow:auto;background:var(--board);border:1px solid var(--line);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:10px;font-size:13px}
+.rail-top{display:flex;flex-direction:column;gap:2px;padding:2px 6px 8px;border-bottom:1px solid var(--line)}
+.rail-title{font-weight:700;font-size:14px;color:var(--ink);text-decoration:none}
+.rail-rev{color:var(--soft);font-size:12px}
+.rail ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.rail ol a{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:8px;color:var(--soft);text-decoration:none;font-weight:550}
+.rail ol a .n{font-family:var(--mono);font-size:11px;opacity:.7}
+.rail ol a:hover{background:var(--code-bg);color:var(--ink)}
+.rail ol a.on{background:var(--accent-tint);color:var(--accent-ink)}
+.rail .dot{width:7px;height:7px;border-radius:50%;background:var(--warn);margin-left:auto;flex:none}
+.rail-foot{display:flex;gap:6px;padding-top:8px;border-top:1px solid var(--line)}
+.rail-foot button{flex:1;border:1px solid var(--line);background:transparent;border-radius:8px;padding:5px 8px;font-size:12px;font-weight:600;color:var(--soft);cursor:pointer}
+.rail-foot button:hover{color:var(--ink);background:var(--code-bg)}
+@media (max-width:1040px){
+  .shell{grid-template-columns:minmax(0,1fr);gap:14px;padding:14px 14px 120px}
+  .rail{top:8px;z-index:5;flex-direction:row;align-items:center;padding:6px;gap:6px;overflow-x:auto;max-height:none}
+  .rail-top,.rail-foot{border:0;padding:0;flex:none}
+  .rail-top{display:none}
+  .rail ol{flex-direction:row}
+  .rail ol a{white-space:nowrap}
+}
+
+/* ---------- boards ---------- */
+.board{background:var(--board);border:1px solid var(--line);border-radius:var(--radius);padding:26px;display:flex;flex-direction:column;gap:18px;min-width:0}
+section.board{counter-increment:board}
+.board-head{display:flex;flex-direction:column;gap:6px}
+section.board .board-head .eyebrow::before{content:counter(board,decimal-leading-zero) " · "}
+.hero{gap:12px;padding:22px 26px}
+.hero .meta{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:12.5px;color:var(--soft)}
+.hero .meta .chip{font-size:11.5px}
+/* key decisions: one dense row each, not cards */
+.facts{margin:0;display:grid;grid-template-columns:max-content minmax(0,1fr) max-content;border:1px solid var(--line);border-radius:var(--radius-sm);font-size:13.5px}
+.facts > div{display:grid;grid-template-columns:subgrid;grid-column:1/-1;border-top:1px solid var(--line);align-items:baseline}
+.facts > div:first-child{border-top:0}
+.facts dt,.facts dd{margin:0;padding:8px 12px;min-width:0}
+.facts dt{color:var(--soft);font-weight:600;white-space:nowrap}
+.facts dd .muted{margin-left:8px}
+.facts dd.st{text-align:right}
+@media (max-width:560px){.facts{grid-template-columns:minmax(0,1fr) max-content}.facts dt{grid-column:1/-1;padding-bottom:0}.facts dd{padding-top:2px}.facts dd .muted{display:block;margin:0}}
+.changes{margin:0;padding:8px 12px 8px 28px;border:1px solid var(--line);border-radius:var(--radius-sm);font-size:13px;display:flex;flex-direction:column;gap:1px}
+.changes::before{content:"Changed since last rev";margin-left:-16px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--warn)}
+[data-changed]{outline:1px dashed var(--warn);outline-offset:3px}
+@media (max-width:560px){.board{padding:18px}}
+
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr))}
+.card{border:1px solid var(--line);border-radius:calc(var(--radius) - 3px);padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.card.hl{border-color:var(--accent);background:var(--accent-tint)}
+.chip{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;font-size:12px;font-weight:650;border-radius:999px;padding:2px 10px;background:var(--code-bg);border:1px solid var(--line);white-space:nowrap}
+.chip.ok{background:var(--ok-tint);color:var(--ok);border-color:transparent}
+.chip.warn{background:var(--warn-tint);color:var(--warn);border-color:transparent}
+.chip.bad{background:var(--bad-tint);color:var(--bad);border-color:transparent}
+.chip.accent{background:var(--accent-tint);color:var(--accent-ink);border-color:transparent}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+ul.clean{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+ul.clean li{max-width:72ch}
+.cols-inout{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+
+/* code, trees, tables */
+pre.code,pre.tree{background:var(--code-bg);border:1px solid var(--line);border-radius:var(--radius-sm);padding:14px 16px;overflow-x:auto;margin:0;font-family:var(--mono);font-size:12.5px;line-height:1.6;min-width:0}
+pre.tree{line-height:1.7}
+.k{color:var(--accent-ink)} .s{color:var(--ok)} .c{color:var(--soft)}
+.new{color:var(--ok);font-weight:650} .chg{color:var(--warn);font-weight:650} .del{color:var(--bad);text-decoration:line-through}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius-sm)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--soft);background:var(--code-bg);font-weight:700}
+tr:last-child td{border-bottom:0}
+td code{white-space:nowrap}
+
+/* diagrams */
+.diagram{border:1px dashed var(--line);border-radius:calc(var(--radius) - 3px);padding:14px;overflow-x:auto;display:flex;flex-direction:column;gap:10px}
+pre.mermaid{margin:0;text-align:center;background:transparent;font-family:var(--mono);font-size:12px;color:var(--soft)}
+pre.mermaid svg{max-width:100%;height:auto}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--soft)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:6px;border:1px solid var(--line);background:var(--code-bg)}
+.legend i.new{background:var(--accent-tint);border-color:var(--accent)}
+.legend i.ext{background:var(--board);border-style:dashed;border-color:var(--soft)}
+.legend i.risk{background:var(--bad-tint);border-color:var(--bad)}
+
+/* numbered layers and plan phases */
+.layer{display:grid;grid-template-columns:32px 1fr;gap:12px;align-items:start}
+.layer .n{width:32px;height:32px;border-radius:9px;background:var(--accent-tint);color:var(--accent-ink);display:grid;place-items:center;font-weight:750;font-variant-numeric:tabular-nums}
+.layer > div:last-child{min-width:0;display:flex;flex-direction:column;gap:4px}
+.phase{display:grid;grid-template-columns:110px 1fr;gap:14px;padding:14px 0;border-top:1px solid var(--line)}
+.phase:first-of-type{border-top:0;padding-top:0}
+.phase > div:last-child{min-width:0;display:flex;flex-direction:column;gap:8px}
+.accept{border-top:1px dashed var(--line);padding-top:8px;font-size:13.5px}
+.accept::before{content:"Done when";display:block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ok)}
+@media (max-width:560px){.phase{grid-template-columns:1fr;gap:6px}}
+
+/* settled decisions and open questions */
+.q{border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px}
+.question{border:1px solid var(--warn);background:var(--warn-tint);border-radius:calc(var(--radius) - 3px);padding:16px;display:flex;flex-direction:column;gap:10px}
+.question .options{display:flex;flex-wrap:wrap;gap:8px}
+.opt{display:flex;flex-direction:column;gap:2px;text-align:left;flex:1 1 200px;border:1px solid var(--line);background:var(--board);border-radius:var(--radius-sm);padding:10px 12px;cursor:pointer;font-weight:650}
+.opt small{font-weight:400;color:var(--soft);font-size:12.5px;line-height:1.45}
+.opt[data-rec]::after{content:"Recommended";align-self:flex-start;margin-top:4px;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-ink)}
+.opt:hover{border-color:var(--accent)}
+.opt[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-tint);box-shadow:0 0 0 1px var(--accent)}
+details.more{border-top:1px solid var(--line);padding-top:12px}
+details.more > summary{cursor:pointer;font-weight:650;font-size:13.5px;color:var(--soft)}
+details.more[open] > summary{margin-bottom:12px}
+
+/* ---------- mockups (lo-fi wireframes that follow the theme) ---------- */
+.mock-row{display:flex;flex-wrap:wrap;gap:22px;justify-content:center}
+figure.mock{margin:0;display:flex;flex-direction:column;gap:10px;align-items:center;min-width:0}
+figure.mock figcaption{font-size:12.5px;color:var(--soft);text-align:center;max-width:280px}
+.phone{width:250px;max-width:100%;aspect-ratio:9/18.5;border-radius:34px;background:var(--ink);padding:9px}
+.screen{position:relative;width:100%;height:100%;border-radius:26px;overflow:hidden;background:var(--ground);font-size:11px}
+.desk{width:100%;border:1px solid var(--line);border-radius:calc(var(--radius) - 3px);overflow:hidden;background:var(--ground);font-size:12px;min-width:0}
+.desk-top{height:32px;background:var(--board);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:6px;padding:0 12px;color:var(--soft);font-size:11px}
+.desk-top i{width:9px;height:9px;border-radius:50%;background:var(--line)}
+.desk-body{display:grid;grid-template-columns:150px 1fr;min-height:260px}
+.m-side{background:var(--board);border-right:1px solid var(--line);padding:10px 8px;display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--soft)}
+.m-side .on{background:var(--accent-tint);color:var(--accent-ink);font-weight:700}
+.m-side span{padding:5px 8px;border-radius:7px}
+.m-main{padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.m-bar{height:40px;display:flex;align-items:center;gap:8px;padding:0 12px;background:var(--board);border-bottom:1px solid var(--line);font-weight:700}
+.m-row{background:var(--board);border:1px solid var(--line);border-radius:10px;padding:9px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.m-col{flex-direction:column;align-items:stretch}
+.screen > .m-row{margin:8px 10px}
+.sk{background:var(--line);border-radius:6px;height:9px;flex:1;min-width:30px}
+.m-col{gap:7px}
+.m-col .sk{flex:none}
+.m-col .sk:last-child{width:55%}
+.m-btn{font-size:11px;font-weight:700;border-radius:999px;padding:5px 12px;background:var(--accent);color:var(--board);white-space:nowrap}
+.m-btn.ghost{background:var(--code-bg);color:var(--ink);border:1px solid var(--line)}
+.m-pill{font-size:10.5px;font-weight:700;border-radius:999px;padding:1px 8px;background:var(--accent-tint);color:var(--accent-ink);white-space:nowrap}
+.m-new{outline:2px solid var(--accent);outline-offset:2px}
+.sp{flex:1}
+@media (max-width:640px){.desk-body{grid-template-columns:1fr}.m-side{display:none}}
+
+/* ---------- notes: tag anything, ask or change, copy for the agent ---------- */
+.wb-add{position:fixed;z-index:30;display:none;align-items:center;gap:5px;border:1px solid var(--accent);background:var(--board);color:var(--accent-ink);border-radius:999px;padding:2px 9px 2px 7px;font-size:11.5px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12);max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wb-add.show{display:inline-flex}
+.wb-target{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+svg .wb-target{outline:none}
+svg .wb-target :is(rect,path,circle,polygon){stroke:var(--accent)!important;stroke-width:2px!important}
+.has-note{outline:2px dotted var(--accent);outline-offset:3px}
+svg .has-note{outline:none}
+svg .has-note :is(rect,path,circle,polygon){stroke:var(--accent)!important;stroke-dasharray:3 2}
+body.wb-pick main *{cursor:crosshair}
+.wb-dock{position:fixed;right:18px;bottom:18px;z-index:40;display:flex;gap:8px;align-items:center}
+.wb-dock button{border:1px solid var(--line);background:var(--board);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:650;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.12)}
+.wb-dock button.primary{background:var(--accent);color:var(--board);border-color:transparent}
+.wb-dock button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent-ink)}
+.wb-panel{position:fixed;right:18px;bottom:68px;z-index:40;width:min(380px,calc(100vw - 28px));max-height:min(70vh,560px);overflow:auto;background:var(--board);border:1px solid var(--line);border-radius:var(--radius);padding:14px;display:none;flex-direction:column;gap:10px;box-shadow:0 12px 34px rgba(0,0,0,.2);font-size:13.5px}
+.wb-panel.show{display:flex}
+.wb-panel h4{display:flex;align-items:center;gap:8px}
+.wb-ref{font-family:var(--mono);font-size:12px;color:var(--accent-ink);word-break:break-word}
+.wb-kinds{display:flex;gap:6px}
+.wb-kinds button,.wb-panel .row button{border:1px solid var(--line);background:transparent;border-radius:8px;padding:5px 10px;font-size:12.5px;font-weight:650;cursor:pointer}
+.wb-kinds button[aria-pressed="true"]{background:var(--accent-tint);color:var(--accent-ink);border-color:var(--accent)}
+.wb-panel textarea{width:100%;min-height:84px;resize:vertical;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--code-bg);color:var(--ink);font:inherit;padding:8px 10px}
+.wb-panel .row{display:flex;gap:6px;justify-content:flex-end;align-items:center}
+.wb-panel .row button{white-space:nowrap;flex:none}
+.wb-panel .row .primary{background:var(--accent);color:var(--board);border-color:transparent}
+.wb-panel .hint{color:var(--soft);font-size:12px;margin-right:auto}
+.wb-note{border:1px solid var(--line);border-radius:var(--radius-sm);padding:9px 10px;display:flex;flex-direction:column;gap:4px}
+.wb-note .top{display:flex;gap:8px;align-items:center}
+.wb-note .top a{flex:1;min-width:0;text-decoration:none}
+.wb-note .top button{border:0;background:transparent;color:var(--soft);cursor:pointer;font-size:12px;padding:0}
+.wb-note p{white-space:pre-wrap}
+@media print{.rail,.wb-dock,.wb-panel,.wb-add{display:none!important}.shell{display:block;padding:0}body{background:#fff}.board{break-inside:avoid;margin-bottom:14px}}
+
+/* theme.css */
+
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="rail" aria-label="Boards"></nav>
+<main class="wrap">
+<header class="board hero" data-rev="2" data-date="2026-11-20">
+  <h1>Saved filters</h1>
+  <p>Let sales reps save the current Leads filters under a name, pin them as tabs, and share them with their team. A saved filter is only a named URL query string; the list endpoint does not change.</p>
+  <div class="meta"><span>rev 2 · 2026-11-20</span><span class="chip accent">Draft</span><span class="chip warn">2 open questions</span></div>
+  <ul class="changes">
+    <li><a href="#data">Data</a>: dropped the separate <code>saved_filter_shares</code> table; sharing is a column.</li>
+    <li><a href="#plan">Plan</a>: sharing moved from phase 1 to phase 2.</li>
+  </ul>
+  <dl class="facts">
+    <div data-tag="storage"><dt>Storage</dt><dd>Query string in Postgres<span class="muted">one row per filter, no new filter engine</span></dd><dd class="st"><span class="chip ok">Decided</span></dd></div>
+    <div data-tag="scope"><dt>Scope</dt><dd>Leads list only<span class="muted">other lists reuse the table via <code>surface</code></span></dd><dd class="st"><span class="chip ok">Decided</span></dd></div>
+    <div data-tag="sharing"><dt>Sharing</dt><dd>Private or whole team<span class="muted">no per-person sharing</span></dd><dd class="st"><span class="chip accent">Proposed</span></dd></div>
+    <div data-tag="limit"><dt>Pinned tabs</dt><dd>Cap to be decided<span class="muted">see <a href="#open">open questions</a></span></dd><dd class="st"><span class="chip warn">Open</span></dd></div>
+  </dl>
+</header>
+
+<section class="board" id="open" data-nav="Open questions">
+  <div class="board-head"><span class="eyebrow">Open questions</span><h2>Two answers unblock the build</h2>
+  <p class="muted">Pick an option, or leave a note on anything else. Then press “review &amp; copy” and paste into the chat.</p></div>
+  <div class="grid g2">
+    <div class="question" data-tag="pin-limit">
+      <h3>How many filters can a rep pin as tabs?</h3>
+      <p class="muted">Tabs sit above the list. On a 360px phone, four fit before the row scrolls.</p>
+      <div class="options">
+        <button type="button" class="opt" data-rec>Cap at 5 <small>Scrolls on phones, never wraps. Extra filters live in the “More” menu.</small></button>
+        <button type="button" class="opt">No cap <small>Simplest to build; long tab rows on desktop.</small></button>
+      </div>
+    </div>
+    <div class="question" data-tag="stale-filter">
+      <h3>What happens when a saved filter names a field that was removed?</h3>
+      <p class="muted">Example: a filter on <code>region</code> after regions are merged.</p>
+      <div class="options">
+        <button type="button" class="opt" data-rec>Drop the dead clause, show a notice <small>The rest of the filter still works.</small></button>
+        <button type="button" class="opt">Mark the filter broken <small>Rep must fix or delete it.</small></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="board" id="scope" data-nav="Scope">
+  <div class="board-head"><span class="eyebrow">Scope</span><h2>What this builds, and what it leaves alone</h2></div>
+  <div class="cols-inout">
+    <div class="card"><span class="chip ok">In</span><ul class="clean">
+      <li>Save the current Leads filters under a name.</li>
+      <li>Pin, rename, reorder and delete your own saved filters.</li>
+      <li>Share a saved filter with your team (read-only for them).</li>
+    </ul></div>
+    <div class="card"><span class="chip bad">Out</span><ul class="clean">
+      <li>New filter fields or operators.</li>
+      <li>Saved filters on Opportunities or Accounts.</li>
+      <li>Email digests or alerts driven by a saved filter.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section class="board" id="system" data-nav="System">
+  <div class="board-head"><span class="eyebrow">Whole system</span><h2>A saved filter is a named query string</h2>
+  <p class="muted">The Leads list already reads every filter from the URL. Saving stores that string; applying one navigates to it. The list endpoint is untouched.</p></div>
+  <div class="diagram" data-tag="map">
+    <pre class="mermaid">
+flowchart LR
+  subgraph WEB["Web app"]
+    L["Leads list page"]:::ext
+    T["Saved-filter tabs"]:::new
+    S["Save filter dialog"]:::new
+  end
+  subgraph API["Backend"]
+    R["/saved-filters router"]:::new
+    V["Filter validator"]:::new
+    LL["GET /leads"]:::ext
+  end
+  DB[("saved_filters")]:::new
+  L --> T
+  L --> S
+  T -- "navigate to ?query" --> L
+  S -- "POST" --> R
+  T -- "GET" --> R
+  R --> V
+  R --> DB
+  L -- "unchanged" --> LL
+    </pre>
+    <div class="legend"><span><i class="new"></i>New in this feature</span><span><i class="ext"></i>Exists today, unchanged</span></div>
+  </div>
+</section>
+
+<section class="board" id="flow" data-nav="Flow">
+  <div class="board-head"><span class="eyebrow">Runtime flow</span><h2>Save once, apply with one tap</h2></div>
+  <div class="diagram" data-tag="save-apply">
+    <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  actor Rep
+  participant List as Leads list
+  participant API as /saved-filters
+  participant DB as Postgres
+  Rep->>List: sets filters, taps Save
+  List->>API: POST name + query string
+  API->>API: validate fields against the filter schema
+  API->>DB: insert saved_filters row
+  API-->>List: 201 saved filter
+  List-->>Rep: new tab appears, selected
+  Rep->>List: taps the tab next morning
+  List->>List: navigate to stored query string
+  Note over List,API: The list fetch is the same GET /leads as today
+    </pre>
+  </div>
+  <div class="card" data-tag="rules"><h3>Rules</h3>
+    <ul class="clean">
+      <li>Names are unique per owner, 1 to 40 characters.</li>
+      <li>A shared filter is read-only for everyone but its owner.</li>
+      <li>Editing the filters while a tab is selected shows “Update” next to Save.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="board" id="data" data-nav="Data">
+  <div class="board-head"><span class="eyebrow">Schema</span><h2>One new table</h2>
+  <p class="muted">No changes to existing tables.</p></div>
+  <div class="grid g2">
+    <div class="card" data-tag="saved-filters" data-changed><h3><code>saved_filters</code> <span class="chip ok">new</span></h3>
+      <div class="tbl"><table><tbody>
+        <tr><td><code>id</code></td><td>uuid pk</td></tr>
+        <tr><td><code>owner_id</code></td><td>uuid fk users</td></tr>
+        <tr><td><code>surface</code></td><td>text, <code>leads</code> for now</td></tr>
+        <tr><td><code>name</code></td><td>text</td></tr>
+        <tr><td><code>query</code></td><td>text, the URL query string</td></tr>
+        <tr data-changed><td><code>shared_with_team</code></td><td>bool, default false</td></tr>
+        <tr><td><code>pinned_position</code></td><td>int null, null means not pinned</td></tr>
+        <tr><td colspan="2" class="muted">unique (owner_id, surface, name)</td></tr>
+      </tbody></table></div>
+    </div>
+    <div class="card" data-tag="example-row"><h3>Example row</h3>
+<pre class="code">{
+  <span class="s">"name"</span>: <span class="s">"Hot leads, north"</span>,
+  <span class="s">"surface"</span>: <span class="s">"leads"</span>,
+  <span class="s">"query"</span>: <span class="s">"status=hot&amp;region=north&amp;sort=-updated"</span>,
+  <span class="s">"shared_with_team"</span>: <span class="k">false</span>,
+  <span class="s">"pinned_position"</span>: 1
+}</pre>
+    </div>
+  </div>
+</section>
+
+<section class="board" id="api" data-nav="API">
+  <div class="board-head"><span class="eyebrow">Contracts</span><h2>Four endpoints, all owner-scoped</h2></div>
+  <div class="tbl"><table>
+    <thead><tr><th>Method · path</th><th>Who</th><th>Does</th></tr></thead>
+    <tbody>
+      <tr data-tag="list"><td><code>GET /saved-filters?surface=leads</code></td><td>any user</td><td>Own filters plus team-shared ones, pinned first.</td></tr>
+      <tr data-tag="create"><td><code>POST /saved-filters</code></td><td>any user</td><td>Validates the query string, then inserts. 409 on a duplicate name.</td></tr>
+      <tr data-tag="update"><td><code>PATCH /saved-filters/{id}</code></td><td>owner</td><td>Rename, re-pin, update query, toggle sharing.</td></tr>
+      <tr data-tag="delete"><td><code>DELETE /saved-filters/{id}</code></td><td>owner</td><td>Removes it for the team as well.</td></tr>
+    </tbody></table></div>
+</section>
+
+<section class="board" id="files" data-nav="Files">
+  <div class="board-head"><span class="eyebrow">Files</span><h2>Where the change lands</h2>
+  <p class="muted"><span class="new">Green</span> is new, <span class="chg">amber</span> is an existing file that changes.</p></div>
+  <div class="grid g2">
+<pre class="tree" data-tag="web">web/src/
+├─ pages/leads/
+│  ├─ <span class="chg">leads-page.tsx</span>          mounts the tab row
+│  ├─ <span class="new">saved-filter-tabs.tsx</span>
+│  └─ <span class="new">save-filter-dialog.tsx</span>
+└─ services/<span class="new">saved-filters/</span>     api.ts, hooks.ts</pre>
+<pre class="tree" data-tag="backend">backend/app/
+├─ api/<span class="new">saved_filters/</span>         router, schema, service
+├─ models/<span class="new">saved_filter.py</span>
+├─ <span class="chg">api/leads/filters.py</span>       exports the field list
+└─ migrations/<span class="new">0042_saved_filters.py</span></pre>
+  </div>
+</section>
+
+<section class="board" id="ui" data-nav="UI">
+  <div class="board-head"><span class="eyebrow">UI</span><h2>Tabs above the list, save beside the filters</h2>
+  <p class="muted">Wireframes, not final visuals. The outlined parts are new.</p></div>
+  <figure class="mock" data-tag="leads-desktop">
+    <div class="desk">
+      <div class="desk-top"><i></i><i></i><i></i><span>crm / leads</span></div>
+      <div class="desk-body">
+        <div class="m-side"><span>Home</span><span class="on">Leads</span><span>Opportunities</span><span>Accounts</span></div>
+        <div class="m-main">
+          <div class="m-row m-new" data-tag="tab-row"><span class="m-pill">All leads</span><span class="m-btn">Hot leads, north</span><span class="m-pill">Stale 14d</span><span class="m-pill">Team: renewals</span><span class="sp"></span><span class="muted">More ▾</span></div>
+          <div class="m-row"><span class="m-btn ghost">Status: hot</span><span class="m-btn ghost">Region: north</span><span class="sp"></span><span class="m-btn m-new" data-tag="save-button">Save filter</span></div>
+          <div class="m-row m-col"><span class="sk"></span><span class="sk"></span></div>
+          <div class="m-row m-col"><span class="sk"></span><span class="sk"></span></div>
+          <div class="m-row m-col"><span class="sk"></span><span class="sk"></span></div>
+        </div>
+      </div>
+    </div>
+    <figcaption>Leads list with three pinned filters and one shared by the team.</figcaption>
+  </figure>
+</section>
+
+<section class="board" id="risks" data-nav="Risks">
+  <div class="board-head"><span class="eyebrow">Risks</span><h2>What can go wrong, worst first</h2></div>
+  <div class="grid g3">
+    <div class="card" data-tag="stale-fields"><span class="chip bad">Must handle</span><h3>Filter fields change</h3><p class="muted">A stored query string can name a field that no longer exists. The validator runs on read as well as on write; see the open question for what the rep sees.</p></div>
+    <div class="card" data-tag="shared-leak"><span class="chip bad">Must handle</span><h3>Sharing shows more than intended</h3><p class="muted">A shared filter shares the query, never the rows. Each viewer still gets only the leads their own permissions allow.</p></div>
+    <div class="card" data-tag="name-clash"><span class="chip">Noted</span><h3>Name clashes with a team filter</h3><p class="muted">Allowed. Team filters carry a “Team:” prefix in the tab.</p></div>
+  </div>
+</section>
+
+<section class="board" id="plan" data-nav="Plan">
+  <div class="board-head"><span class="eyebrow">Plan</span><h2>Two phases, each shippable</h2></div>
+  <div>
+    <div class="phase" data-tag="phase-1"><div><span class="chip accent">Phase 1</span></div><div><h3>Private saved filters</h3>
+      <ul class="clean"><li>Table, four endpoints, validator.</li><li>Tab row, save dialog, rename and delete.</li></ul>
+      <p class="accept">A rep saves a filter, reloads, taps its tab and sees the same leads. Deleting a filter field from the schema does not break the list.</p></div></div>
+    <div class="phase" data-tag="phase-2" data-changed><div><span class="chip accent">Phase 2</span></div><div><h3>Team sharing and pin order</h3>
+      <ul class="clean"><li>Share toggle, “Team:” tabs, drag to reorder.</li></ul>
+      <p class="accept">A teammate sees a shared filter as a read-only tab and gets only their own leads through it.</p></div></div>
+  </div>
+</section>
+
+</main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script>
+/* Whiteboard kit runtime: rail nav, theme, themed mermaid, and notes (tag anything, copy for the agent). */
+(function () {
+  'use strict';
+  var root = document.documentElement;
+  var main = document.querySelector('main.wrap');
+  if (!main) return;
+
+  function $(s, c) { return (c || document).querySelector(s); }
+  function $$(s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); }
+  function el(tag, cls, html) { var n = document.createElement(tag); if (cls) n.className = cls; if (html != null) n.innerHTML = html; return n; }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function clean(s) { return String(s || '').replace(/\s+/g, ' ').trim(); }
+  function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function save(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* private mode: notes last for this visit only */ } }
+  function token(name) { return getComputedStyle(root).getPropertyValue(name).trim(); }
+
+  var hero = $('header.board', main);
+  if (hero && !hero.id) hero.id = 'top';
+  var title = clean(($('h1', main) || {}).textContent) || document.title;
+  var rev = (hero && hero.dataset.rev) || '1';
+  var boards = $$('section.board', main);
+
+  /* ---------- rail ---------- */
+  var rail = $('nav.rail');
+  if (rail) {
+    var h = '<div class="rail-top"><a class="rail-title" href="#top">' + esc(title) + '</a><span class="rail-rev">rev ' + esc(rev) +
+      (hero && hero.dataset.date ? ' · ' + esc(hero.dataset.date) : '') + '</span></div><ol>';
+    boards.forEach(function (b, i) {
+      var label = b.dataset.nav || clean(($('.eyebrow', b) || $('h2', b) || {}).textContent) || b.id;
+      var changed = b.hasAttribute('data-changed') || b.querySelector('[data-changed]');
+      h += '<li><a href="#' + esc(b.id) + '"><span class="n">' + (i < 9 ? '0' : '') + (i + 1) + '</span>' + esc(label) +
+        (changed ? '<i class="dot" title="Changed in this revision"></i>' : '') + '</a></li>';
+    });
+    h += '</ol><div class="rail-foot"><button type="button" data-act="theme"></button></div>';
+    rail.innerHTML = h;
+    var themeBtn = $('[data-act="theme"]', rail);
+    var paintTheme = function () { themeBtn.textContent = root.dataset.theme === 'dark' ? 'Light mode' : 'Dark mode'; };
+    paintTheme();
+    themeBtn.addEventListener('click', function () {
+      root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+      save('wb-theme', root.dataset.theme);
+      paintTheme();
+      drawDiagrams();
+    });
+    if ('IntersectionObserver' in window) {
+      var links = {};
+      $$('ol a', rail).forEach(function (a) { links[a.getAttribute('href').slice(1)] = a; });
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) {
+          if (!en.isIntersecting) return;
+          for (var k in links) links[k].classList.toggle('on', k === en.target.id);
+        });
+      }, { rootMargin: '-15% 0px -75% 0px' });
+      boards.forEach(function (b) { io.observe(b); });
+    }
+  }
+
+  /* ---------- diagrams: mermaid drawn with the page tokens ---------- */
+  var diagrams = $$('pre.mermaid', main);
+  diagrams.forEach(function (d) { d.dataset.src = d.textContent; });
+  function drawDiagrams() {
+    if (!window.mermaid || !diagrams.length) { indexUnits(); return; }
+    var t = {};
+    ['board', 'ink', 'soft', 'line', 'accent', 'accent-tint', 'accent-ink', 'code-bg', 'warn-tint', 'bad', 'bad-tint', 'sans'].forEach(function (k) { t[k] = token('--' + k); });
+    var classDefs = '\n  classDef new fill:' + t['accent-tint'] + ',stroke:' + t.accent + ',color:' + t.ink +
+      '\n  classDef ext fill:' + t.board + ',stroke:' + t.soft + ',color:' + t.soft + ',stroke-dasharray:4 3' +
+      '\n  classDef risk fill:' + t['bad-tint'] + ',stroke:' + t.bad + ',color:' + t.ink + '\n';
+    diagrams.forEach(function (d) {
+      var src = d.dataset.src;
+      d.removeAttribute('data-processed');
+      d.textContent = /^\s*(flowchart|graph)\b/.test(src) ? src + classDefs : src;
+    });
+    window.mermaid.initialize({
+      startOnLoad: false, securityLevel: 'strict', theme: 'base',
+      themeVariables: {
+        fontFamily: t.sans, fontSize: '14px', background: t.board,
+        primaryColor: t['code-bg'], primaryTextColor: t.ink, primaryBorderColor: t.soft, lineColor: t.soft,
+        secondaryColor: t['accent-tint'], tertiaryColor: t.board, clusterBkg: t.board, clusterBorder: t.line,
+        edgeLabelBackground: t.board, noteBkgColor: t['warn-tint'], noteTextColor: t.ink, noteBorderColor: t.line,
+        actorBkg: t['code-bg'], actorBorder: t.soft, actorTextColor: t.ink, signalColor: t.soft, signalTextColor: t.ink,
+        labelBoxBkgColor: t['code-bg'], labelBoxBorderColor: t.line, labelTextColor: t.ink, loopTextColor: t.ink,
+        activationBkgColor: t['accent-tint'], activationBorderColor: t.accent, sequenceNumberColor: t.board
+      }
+    });
+    window.mermaid.run({ nodes: diagrams }).then(indexUnits, indexUnits);
+  }
+
+  /* ---------- units: everything a reader can tag ---------- */
+  var HTML_UNITS = '[data-tag], section.board, header.board, .card, .question, .q, .phase, .layer, .diagram, figure.mock, .desk, pre.code, pre.tree, .tbl tbody tr, ul.clean > li';
+  var SVG_UNITS = 'g.node, g.cluster, g.actor, text.actor, text.messageText, g.statediagram-state, g.edgeLabel, g.note';
+  var byRef = {};
+
+  function unitFrom(target) {
+    if (!target || !target.closest || !main.contains(target)) return null;
+    var mock = target.closest('figure.mock') || target.closest('.desk');
+    if (mock) return target.closest('[data-tag]') && mock.contains(target.closest('[data-tag]')) ? target.closest('[data-tag]') : mock;
+    return target.closest(SVG_UNITS) || target.closest(HTML_UNITS);
+  }
+  function labelOf(u) {
+    if (u instanceof SVGElement) return clean(u.textContent);
+    var head = $('h2, h3, h4, b, td, code', u);
+    return clean((head || u).textContent);
+  }
+  function refOf(u) {
+    var sec = u.closest('section.board, header.board');
+    var ref = '#' + ((sec && sec.id) || 'top');
+    if (u === sec) return ref;
+    var isSvg = u instanceof SVGElement;
+    var host = isSvg ? u.closest('[data-tag]') : u;
+    if (host && host.dataset && host.dataset.tag) ref += '.' + host.dataset.tag;
+    if (isSvg || !u.dataset.tag) ref += ' › "' + labelOf(u).slice(0, 60) + '"';
+    return ref;
+  }
+  function indexUnits() {
+    byRef = {};
+    $$(HTML_UNITS + ',' + SVG_UNITS, main).forEach(function (u) { var r = refOf(u); if (!byRef[r]) byRef[r] = u; });
+    paintMarks();
+  }
+
+  /* ---------- notes ---------- */
+  var KEY = 'wb-notes:' + location.pathname + ':' + title;
+  var notes = [];
+  try { notes = JSON.parse(load(KEY) || '[]') || []; } catch (e) { notes = []; }
+  var KINDS = { question: 'Question', change: 'Change', approve: 'Looks good', answer: 'Answer' };
+  function newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  var current = null;   // unit being annotated
+  var kind = 'question';
+
+  var add = el('button', 'wb-add'); add.type = 'button';
+  var dock = el('div', 'wb-dock', '<button type="button" data-act="pick" aria-pressed="false" title="Then click any part of the board (shortcut: N)">+ Note</button><button type="button" class="primary" data-act="tray"></button>');
+  var composer = el('div', 'wb-panel');
+  var tray = el('div', 'wb-panel');
+  document.body.appendChild(add); document.body.appendChild(composer); document.body.appendChild(tray); document.body.appendChild(dock);
+
+  function persist() { save(KEY, JSON.stringify(notes)); paintMarks(); paintDock(); if (tray.classList.contains('show')) paintTray(); }
+  function paintDock() { $('[data-act="tray"]', dock).textContent = notes.length ? notes.length + (notes.length === 1 ? ' note' : ' notes') + ' · review & copy' : 'No notes yet'; }
+  function paintMarks() {
+    $$('.has-note', main).forEach(function (n) { n.classList.remove('has-note'); });
+    $$('.opt[aria-pressed="true"]', main).forEach(function (o) { o.setAttribute('aria-pressed', 'false'); });
+    notes.forEach(function (n) {
+      var u = byRef[n.ref]; if (!u) return;
+      if (n.kind === 'answer') {
+        $$('.opt', u).forEach(function (o) { if (optLabel(o) === n.text) o.setAttribute('aria-pressed', 'true'); });
+      } else u.classList.add('has-note');
+    });
+  }
+  function optLabel(o) { var c = o.cloneNode(true); $$('small', c).forEach(function (s) { s.remove(); }); return clean(c.textContent); }
+
+  function setPick(on) {
+    document.body.classList.toggle('wb-pick', on);
+    $('[data-act="pick"]', dock).setAttribute('aria-pressed', on ? 'true' : 'false');
+    $('[data-act="pick"]', dock).textContent = on ? 'Click something…' : '+ Note';
+  }
+  function clearTarget() { $$('.wb-target', main).forEach(function (n) { n.classList.remove('wb-target'); }); }
+
+  function openComposer(u) {
+    current = u; clearTarget(); u.classList.add('wb-target');
+    tray.classList.remove('show'); add.classList.remove('show'); setPick(false);
+    var ref = refOf(u);
+    composer.innerHTML = '<h4>Note on <span class="wb-ref">' + esc(ref) + '</span></h4>' +
+      '<div class="wb-kinds">' + ['question', 'change', 'approve'].map(function (k) {
+        return '<button type="button" data-kind="' + k + '" aria-pressed="' + (k === kind) + '">' + KINDS[k] + '</button>';
+      }).join('') + '</div>' +
+      '<textarea placeholder="Ask a question or describe the change…"></textarea>' +
+      '<div class="row"><span class="hint">⌘/Ctrl + Enter to save</span><button type="button" data-act="cancel">Cancel</button><button type="button" class="primary" data-act="save">Save note</button></div>';
+    composer.classList.add('show');
+    $('textarea', composer).focus();
+  }
+  function closeComposer() { composer.classList.remove('show'); clearTarget(); current = null; }
+  function saveNote() {
+    if (!current) return;
+    var text = $('textarea', composer).value.trim();
+    if (!text && kind !== 'approve') { $('textarea', composer).focus(); return; }
+    notes.push({ id: newId(), ref: refOf(current), kind: kind, text: text, quote: labelOf(current).slice(0, 140) });
+    closeComposer(); persist();
+  }
+
+  function paintTray() {
+    var h = '<h4>Notes for the agent</h4>';
+    if (!notes.length) h += '<p class="muted">Hover any card, row, diagram node or section and press the “+” tag, or use “+ Note” and click. Notes stay in this browser until you copy them into the chat.</p>';
+    notes.forEach(function (n) {
+      h += '<div class="wb-note"><div class="top"><span class="chip ' + (n.kind === 'change' ? 'warn' : n.kind === 'approve' ? 'ok' : 'accent') + '">' + KINDS[n.kind] + '</span>' +
+        '<a class="wb-ref" href="#" data-goto="' + esc(n.ref) + '">' + esc(n.ref) + '</a><button type="button" data-del="' + n.id + '">Remove</button></div>' +
+        (n.text ? '<p>' + esc(n.text) + '</p>' : '') + '</div>';
+    });
+    if (notes.length) h += '<div class="row"><span class="hint" data-status>Paste the copied text into the chat.</span><button type="button" data-act="clear">Clear all</button><button type="button" class="primary" data-act="copy">Copy for agent</button></div>';
+    tray.innerHTML = h;
+  }
+  function exportText() {
+    var out = ['Whiteboard feedback: ' + title + ' (rev ' + rev + ')', ''];
+    notes.forEach(function (n, i) {
+      out.push((i + 1) + '. [' + n.kind + '] ' + n.ref + (n.text ? ': ' + n.text.replace(/\n+/g, ' / ') : ''));
+      if (n.quote && n.ref.indexOf('"') < 0 && n.kind !== 'answer') out.push('   on: "' + n.quote + '"');
+    });
+    return out.join('\n');
+  }
+  function copy(text, done) {
+    var fallback = function () {
+      var ta = el('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      var ok = false; try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      ta.remove(); done(ok);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { done(true); }, fallback);
+    else fallback();
+  }
+
+  /* hover tag */
+  var hoverUnit = null, hideTimer = null;
+  main.addEventListener('mouseover', function (e) {
+    if (composer.classList.contains('show')) return;
+    var u = unitFrom(e.target); if (!u) return;
+    clearTimeout(hideTimer); hoverUnit = u;
+    var r = u.getBoundingClientRect();
+    add.textContent = '+ ' + refOf(u);
+    add.classList.add('show');
+    add.style.top = Math.max(6, r.top - 11) + 'px';
+    add.style.left = Math.max(6, Math.min(window.innerWidth - add.offsetWidth - 6, r.right - add.offsetWidth - 8)) + 'px';
+  });
+  main.addEventListener('mouseleave', function () { hideTimer = setTimeout(function () { add.classList.remove('show'); }, 400); });
+  add.addEventListener('mouseenter', function () { clearTimeout(hideTimer); });
+  add.addEventListener('click', function () { if (hoverUnit) openComposer(hoverUnit); });
+  window.addEventListener('scroll', function () { add.classList.remove('show'); }, { passive: true });
+
+  /* clicks */
+  main.addEventListener('click', function (e) {
+    if (document.body.classList.contains('wb-pick')) {
+      var u = unitFrom(e.target);
+      if (u) { e.preventDefault(); e.stopPropagation(); openComposer(u); }
+      return;
+    }
+    var opt = e.target.closest && e.target.closest('.question .opt');
+    if (opt) {
+      var q = opt.closest('.question'), ref = refOf(q), label = optLabel(opt);
+      var was = opt.getAttribute('aria-pressed') === 'true';
+      notes = notes.filter(function (n) { return !(n.kind === 'answer' && n.ref === ref); });
+      if (!was) notes.push({ id: newId(), ref: ref, kind: 'answer', text: label, quote: '' });
+      persist();
+    }
+  }, true);
+  dock.addEventListener('click', function (e) {
+    var act = e.target.dataset.act;
+    if (act === 'pick') { closeComposer(); setPick(!document.body.classList.contains('wb-pick')); }
+    if (act === 'tray') { closeComposer(); setPick(false); paintTray(); tray.classList.toggle('show'); }
+  });
+  composer.addEventListener('click', function (e) {
+    var k = e.target.dataset.kind, act = e.target.dataset.act;
+    if (k) { kind = k; $$('[data-kind]', composer).forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.kind === k)); }); $('textarea', composer).focus(); }
+    if (act === 'cancel') closeComposer();
+    if (act === 'save') saveNote();
+  });
+  composer.addEventListener('keydown', function (e) { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) saveNote(); });
+  tray.addEventListener('click', function (e) {
+    var t = e.target;
+    if (t.dataset.del) { notes = notes.filter(function (n) { return n.id !== t.dataset.del; }); persist(); }
+    if (t.dataset.goto) { e.preventDefault(); var u = byRef[t.dataset.goto]; if (u) { u.scrollIntoView({ block: 'center' }); clearTarget(); u.classList.add('wb-target'); setTimeout(clearTarget, 1600); } }
+    if (t.dataset.act === 'clear') { notes = []; persist(); }
+    if (t.dataset.act === 'copy') copy(exportText(), function (ok) { var s = $('[data-status]', tray); if (s) s.textContent = ok ? 'Copied. Paste it into the chat.' : 'Copy failed; select the text manually.'; if (!ok) window.prompt('Copy this into the chat', exportText()); });
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { closeComposer(); setPick(false); tray.classList.remove('show'); return; }
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || '')) || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === 'n' || e.key === 'N') { closeComposer(); setPick(!document.body.classList.contains('wb-pick')); }
+  });
+
+  paintDock();
+  drawDiagrams();
+})();
+
+</script>
+</body>
+</html>

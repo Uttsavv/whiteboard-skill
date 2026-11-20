@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>{{TITLE}}</title>
+<script>(function(){var t;try{t=localStorage.getItem('wb-theme')}catch(e){}if(t!=='light'&&t!=='dark')t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t})()</script>
+<style>
+{{IMPORTS}}
+{{CSS}}
+/* theme.css */
+{{THEME}}
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="rail" aria-label="Boards"></nav>
+<main class="wrap">
+{{CONTENT}}
+</main>
+</div>
+{{MERMAID}}
+<script>
+{{JS}}
+</script>
+</body>
+</html>

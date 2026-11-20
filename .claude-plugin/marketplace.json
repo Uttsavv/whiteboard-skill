@@ -1,0 +1,12 @@
+{
+  "name": "whiteboard-skill",
+  "description": "Interactive system-design whiteboards that double as the spec.",
+  "owner": { "name": "Utsav Singh", "url": "https://github.com/Uttsavv" },
+  "plugins": [
+    {
+      "name": "whiteboard",
+      "description": "Draw a feature's system design as an interactive whiteboard page that doubles as the spec.",
+      "source": "./"
+    }
+  ]
+}
