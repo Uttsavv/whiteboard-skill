@@ -78,7 +78,7 @@ At step 7 each slice becomes one ticket and each graph edge a blocking link, so 
 python3 ${CLAUDE_SKILL_DIR}/scripts/build.py <board-folder>
 ```
 
-`${CLAUDE_SKILL_DIR}` is the folder holding this file; if your agent leaves it unexpanded, substitute that path.
+`${CLAUDE_SKILL_DIR}` is the folder holding this file; if your agent leaves it unexpanded, substitute that path. Where `python3` is missing (often on Windows), run the same command with `python`.
 
 Fix every `ERROR` and act on every `warn`, then open `index.html` and look at it: each diagram renders, nothing overflows its board, both themes read cleanly.
 
@@ -86,13 +86,23 @@ Fix every `ERROR` and act on every `warn`, then open `index.html` and look at it
 
 ## 5. Hand over
 
-Reply with the path to `index.html`, the open questions in one line each, and one sentence on how to respond: hover any part and press its tag (or press `N` and click), write the note, then "review & copy" and paste into the chat. Keep the reply short; the page carries the detail.
+The reader should be looking at the page, and able to answer from the chat alone.
+
+**Show the page.** Use the host's own HTML preview if it has one (a preview pane, an artifact). Otherwise rebuild with `--open` on the first revision to open it in the default browser; on later revisions say "reload the tab", since the reader already has it open and their unsent notes live there. When neither works (a remote or headless session), give the `url` line the build printed: a `file://` link opens in a browser, while a bare path often opens as source.
+
+**Reply so it stands on its own.** In this order, and nothing more:
+
+1. The verdict: what you propose, in one or two sentences.
+2. The open questions, numbered, each with its options and your recommendation, so the reader can answer in chat ("1: cap at 5, 2: drop the clause") without opening the page.
+3. One line on reviewing the page: tag any part (hover, or `N` and click), then "review & copy" and paste the notes here.
+
+The page carries the detail; the reply is what the reader acts on first.
 
 Publish the page to a URL only when the user asks, using the host they name, and confirm before the first publish of a board: a public URL exposes the design.
 
 ## 6. Revise
 
-Triggered by a pasted `Whiteboard feedback:` block, or any message citing `#board.tag`.
+Triggered by a pasted `Whiteboard feedback:` block, answers to the numbered open questions, or any message citing `#board.tag`.
 
 Each note is `[kind] #ref: text`:
 

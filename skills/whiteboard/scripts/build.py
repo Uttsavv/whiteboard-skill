@@ -4,7 +4,10 @@
 Inlines the kit so the result is one self-contained file, and checks the board
 against the rules the notes layer and the rail depend on. Standard library only.
 
-    python3 build.py path/to/board-folder
+    python3 build.py path/to/board-folder [--open]
+
+--open shows the result in the default browser (use it on the first build;
+on later builds the reader reloads the tab they already have).
 """
 import re
 import sys
@@ -138,9 +141,10 @@ class Check(HTMLParser):
 
 
 def main():
-    if len(sys.argv) != 2:
+    args = [a for a in sys.argv[1:] if a != "--open"]
+    if len(args) != 1:
         sys.exit(__doc__)
-    folder = Path(sys.argv[1]).expanduser().resolve()
+    folder = Path(args[0]).expanduser().resolve()
     src = folder / "board.html"
     if not src.is_file():
         sys.exit(f"no board.html in {folder}")
@@ -195,6 +199,15 @@ def main():
     dest = folder / "index.html"
     dest.write_text(out, encoding="utf-8")
     print(f"ok     {dest}  ({len(out) // 1024} KB, rev {c.rev}, {c.boards} boards, {c.questions} open question(s), {len(c.warnings)} warning(s))")
+    url = dest.as_uri()
+    print(f"url    {url}")
+    if "--open" in sys.argv:
+        import webbrowser
+        try:
+            opened = webbrowser.open(url)
+        except Exception:
+            opened = False
+        print("opened in the default browser" if opened else "no browser available; give the reader the url above")
 
 
 if __name__ == "__main__":
