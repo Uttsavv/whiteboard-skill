@@ -18,6 +18,8 @@ In Claude Code:
 
 Other agents: `npx skills add Uttsavv/whiteboard-skill`
 
+Requires Python 3.8+ (standard library only, nothing to `pip install`). The agent runs it to build the page.
+
 ## Use
 
 ```
@@ -68,6 +70,6 @@ Diagrams mark what is new against what exists today:
 - One self-contained HTML file, no server. Diagrams load Mermaid from a CDN.
 - Clean by default: one accent, flat colours, light and dark themes. No gradients, purple or decorative stripes unless your design system has them.
 - Try the example: `python3 skills/whiteboard/scripts/build.py skills/whiteboard/example`, then open `skills/whiteboard/example/index.html`.
-- Regenerate these images: `node scripts/screenshots.mjs`.
+- Regenerate these images (maintainers, needs Node 22+ and Chrome): `node scripts/screenshots.mjs`.
 
 MIT licensed.
