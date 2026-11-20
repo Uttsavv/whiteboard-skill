@@ -202,16 +202,16 @@ sequenceDiagram
 </section>
 
 <section class="board" id="build" data-nav="Build order" data-changed>
-  <div class="board-head"><span class="eyebrow">Build order</span><h2>Four slices, two run in parallel, one human gate</h2>
+  <div class="board-head"><span class="eyebrow">Build order</span><h2>Four slices, two in parallel, two human gates</h2>
   <p class="muted">Each slice is one agent task and one PR. The API contract above is fixed, so the web slice builds against it while the backend lands.</p></div>
   <div class="diagram" data-tag="graph">
     <pre class="mermaid">
 flowchart LR
-  G1{{"Answer open questions"}}:::gate
+  G1{{"G1 · answer open questions"}}:::gate
   S1["S1 · table + migration"]:::new
   S2["S2 · endpoints + validator"]:::new
   S3["S3 · tabs + save dialog"]:::new
-  G2{{"Review migration"}}:::gate
+  G2{{"G2 · review migration"}}:::gate
   S4["S4 · team sharing"]:::new
   G1 --> S2
   S1 --> G2 --> S2

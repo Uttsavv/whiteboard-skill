@@ -148,6 +148,7 @@ section.board[data-fold]{gap:0}
 .fold-body{display:flex;flex-direction:column;gap:18px;padding-top:18px;min-width:0}
 .fold-body[hidden]{display:none}
 @media (prefers-reduced-motion:reduce){.fold-chev{transition:none}}
+.wb-init *{transition:none!important}
 .rail ol a .count{margin-left:auto;font-size:11px;font-weight:700;min-width:18px;height:18px;padding:0 5px;border-radius:999px;display:inline-grid;place-items:center;background:var(--warn-tint);color:var(--warn)}
 .rail ol a .count + .dot{margin-left:6px}
 details.more{border-top:1px solid var(--line);padding-top:12px}

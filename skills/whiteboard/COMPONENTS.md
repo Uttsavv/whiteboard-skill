@@ -130,10 +130,10 @@ Phone frame: `<div class="phone"><div class="screen"> <div class="m-bar">Title</
 
 ```html
 <section class="board" id="build" data-nav="Build order">
-  <div class="board-head"><span class="eyebrow">Build order</span><h2>Four slices, two run in parallel, one human gate</h2></div>
+  <div class="board-head"><span class="eyebrow">Build order</span><h2>Four slices, two in parallel, two human gates</h2></div>
   <div class="diagram" data-tag="graph"><pre class="mermaid">
 flowchart LR
-  G1{{"Answer open questions"}}:::gate
+  G1{{"G1 · answer open questions"}}:::gate
   S1["S1 · table + migration"]:::new
   S2["S2 · endpoints"]:::new
   G1 --> S2

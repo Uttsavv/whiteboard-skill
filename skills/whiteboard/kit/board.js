@@ -1,6 +1,7 @@
 /* Whiteboard kit runtime: rail nav, theme, themed mermaid, and notes (tag anything, copy for the agent). */
 (function () {
   'use strict';
+  document.documentElement.classList.add('wb-init');  // no transitions while the page sets its initial state
   var root = document.documentElement;
   var main = document.querySelector('main.wrap');
   if (!main) return;
@@ -334,4 +335,5 @@
 
   paintDock();
   drawDiagrams();
+  requestAnimationFrame(function () { requestAnimationFrame(function () { root.classList.remove('wb-init'); }); });
 })();
