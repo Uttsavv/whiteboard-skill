@@ -55,6 +55,62 @@
     }
   }
 
+  /* ---------- folding boards (data-fold): collapsed by default, with a question count ---------- */
+  var folds = $$('section.board[data-fold]', main);
+  folds.forEach(function (b) {
+    var head = $('.board-head', b);
+    if (!head) return;
+    var body = el('div', 'fold-body');
+    $$(':scope > *', b).forEach(function (n) { if (n !== head) body.appendChild(n); });
+    b.appendChild(body);
+    var side = el('span', 'fold-side', '<span class="chip warn fold-count"></span><span class="fold-chev" aria-hidden="true"></span>');
+    head.appendChild(side);
+    head.setAttribute('role', 'button');
+    head.tabIndex = 0;
+    var toggle = function () { setFold(b, !b.classList.contains('folded')); };
+    head.addEventListener('click', function (e) { if (!(e.target.closest && e.target.closest('a'))) toggle(); });
+    head.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+    setFold(b, true);
+  });
+  function setFold(b, folded) {
+    b.classList.toggle('folded', folded);
+    $('.fold-body', b).hidden = folded;
+    $('.board-head', b).setAttribute('aria-expanded', String(!folded));
+  }
+  function reveal(node) {
+    var b = node && node.closest && node.closest('section.board[data-fold]');
+    if (b && b.classList.contains('folded')) setFold(b, false);
+  }
+  function revealHash() {
+    var id = decodeURIComponent(location.hash.slice(1));
+    var t = id && document.getElementById(id);
+    if (t) reveal(t);
+  }
+  window.addEventListener('hashchange', revealHash);
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href^="#"]');
+    if (!a) return;
+    var t = document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    if (t) reveal(t);
+  });
+  revealHash();
+  function paintFolds() {
+    folds.forEach(function (b) {
+      var qs = $$('.question', b), c = $('.fold-count', b), link = rail && $('a[href="#' + b.id + '"]', rail);
+      if (!c) return;
+      var answered = qs.filter(function (q) { return notes.some(function (n) { return n.kind === 'answer' && byRef[n.ref] === q; }); }).length;
+      var open = qs.length - answered;
+      c.hidden = !qs.length;
+      c.className = 'chip fold-count ' + (open ? 'warn' : 'ok');
+      c.textContent = open ? open + ' open' + (answered ? ' · ' + answered + ' answered' : '') : 'All answered';
+      if (link) {
+        var badge = $('.count', link) || link.appendChild(el('span', 'count'));
+        badge.textContent = qs.length ? String(open) : '';
+        badge.hidden = !open;
+      }
+    });
+  }
+
   /* ---------- diagrams: mermaid drawn with the page tokens ---------- */
   var diagrams = $$('pre.mermaid', main);
   diagrams.forEach(function (d) { d.dataset.src = d.textContent; });
@@ -135,6 +191,7 @@
   function persist() { save(KEY, JSON.stringify(notes)); paintMarks(); paintDock(); if (tray.classList.contains('show')) paintTray(); }
   function paintDock() { $('[data-act="tray"]', dock).textContent = notes.length ? notes.length + (notes.length === 1 ? ' note' : ' notes') + ' · review & copy' : 'No notes yet'; }
   function paintMarks() {
+    if (typeof paintFolds === 'function') setTimeout(paintFolds);
     $$('.has-note', main).forEach(function (n) { n.classList.remove('has-note'); });
     $$('.opt[aria-pressed="true"]', main).forEach(function (o) { o.setAttribute('aria-pressed', 'false'); });
     notes.forEach(function (n) {
@@ -253,7 +310,7 @@
   tray.addEventListener('click', function (e) {
     var t = e.target;
     if (t.dataset.del) { notes = notes.filter(function (n) { return n.id !== t.dataset.del; }); persist(); }
-    if (t.dataset.goto) { e.preventDefault(); var u = byRef[t.dataset.goto]; if (u) { u.scrollIntoView({ block: 'center' }); clearTarget(); u.classList.add('wb-target'); setTimeout(clearTarget, 1600); } }
+    if (t.dataset.goto) { e.preventDefault(); var u = byRef[t.dataset.goto]; if (u) { reveal(u); u.scrollIntoView({ block: 'center' }); clearTarget(); u.classList.add('wb-target'); setTimeout(clearTarget, 1600); } }
     if (t.dataset.act === 'clear') { notes = []; persist(); }
     if (t.dataset.act === 'copy') copy(exportText(), function (ok) { var s = $('[data-status]', tray); if (s) s.textContent = ok ? 'Copied. Paste it into the chat.' : 'Copy failed; select the text manually.'; if (!ok) window.prompt('Copy this into the chat', exportText()); });
   });

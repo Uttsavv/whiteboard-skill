@@ -34,7 +34,7 @@ Read the code the feature touches before drawing anything. The whiteboard is tru
 Write `board.html`. Boards in this order, each included only when the feature has something to say there:
 
 1. **Hero**: feature name, one sentence on what and why, a meta line (revision, date, status), and three to five key decisions as rows, each chipped `Decided`, `Proposed` or `Open`.
-2. **Open questions**: each a `.question` with two to four options and one marked recommended. First board, because answers here change everything below.
+2. **Open questions**: one `data-fold` board, collapsed by default with its open count showing; each a `.question` with two to four options and one marked recommended. It comes first, because answers here change everything below.
 3. **Scope**: what is in, what is out.
 4. **System**: one flowchart of the parts, new ones marked `:::new`, existing ones `:::ext`.
 5. **Flow**: a sequence or state diagram per behaviour, with its rules beside it.

@@ -45,6 +45,19 @@ Status chips: `chip ok` Decided, `chip accent` Proposed, `chip warn` Open, `chip
 
 ## Open question
 
+The open questions live in one board that starts collapsed, with the open count in its header:
+
+```html
+<section class="board" id="open" data-nav="Open questions" data-fold>
+  <div class="board-head"><span class="eyebrow">Open questions</span><h2>Two answers unblock the build</h2></div>
+  <div class="grid g2"> …questions… </div>
+</section>
+```
+
+`data-fold` works on any board whose detail a first read can skip; the count appears when the board holds `.question` elements and updates as the reader answers. Links to the board (rail, hero) expand it. Keep diagrams out of folded boards: Mermaid cannot draw while hidden, and the build refuses it.
+
+Each question:
+
 ```html
 <div class="question" data-tag="pin-limit">
   <h3>The question, answerable by picking an option?</h3>

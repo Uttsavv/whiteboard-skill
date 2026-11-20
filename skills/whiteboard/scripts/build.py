@@ -161,6 +161,9 @@ def main():
         c.errors.append("board.html holds only the hero and the boards; the build supplies <html>, <head> and <body>")
     if re.search(r"style=\"[^\"]*(#[0-9a-fA-F]{3,8}\b|rgba?\()", content):
         c.warnings.append("board.html has literal colours; use tokens (var(--accent) …) so both themes and the app theme apply")
+    for sec in re.findall(r"<section\b[^>]*\bdata-fold\b[^>]*>.*?</section>", content, flags=re.S):
+        if 'class="mermaid"' in sec:
+            c.errors.append("a data-fold board holds a diagram; diagrams cannot draw while collapsed, so move it to an open board")
     if c.boards > 12:
         c.warnings.append(f"{c.boards} boards: fold detail into <details class=\"more\"> or merge boards; aim for 12 or fewer")
 

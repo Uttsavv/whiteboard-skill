@@ -136,6 +136,19 @@ pre.mermaid svg{max-width:100%;height:auto}
 .opt[data-rec]::after{content:"Recommended";align-self:flex-start;margin-top:4px;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-ink)}
 .opt:hover{border-color:var(--accent)}
 .opt[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-tint);box-shadow:0 0 0 1px var(--accent)}
+/* folding board */
+section.board[data-fold] > .board-head{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:14px;cursor:pointer;border-radius:var(--radius-sm)}
+section.board[data-fold] > .board-head > :not(.fold-side){grid-column:1}
+section.board[data-fold] > .board-head:focus-visible{outline:2px solid var(--accent);outline-offset:6px}
+.fold-side{grid-column:2;grid-row:1/span 3;align-self:center;display:flex;align-items:center;gap:12px}
+.fold-chev{width:9px;height:9px;border-right:2px solid var(--soft);border-bottom:2px solid var(--soft);transform:rotate(45deg) translate(-2px,-2px);transition:transform .15s}
+section.board.folded .fold-chev{transform:rotate(-45deg)}
+.fold-body{display:flex;flex-direction:column;gap:18px;min-width:0}
+.fold-body[hidden]{display:none}
+section.board.folded{gap:0}
+@media (prefers-reduced-motion:reduce){.fold-chev{transition:none}}
+.rail ol a .count{margin-left:auto;font-size:11px;font-weight:700;min-width:18px;height:18px;padding:0 5px;border-radius:999px;display:inline-grid;place-items:center;background:var(--warn-tint);color:var(--warn)}
+.rail ol a .count + .dot{margin-left:6px}
 details.more{border-top:1px solid var(--line);padding-top:12px}
 details.more > summary{cursor:pointer;font-weight:650;font-size:13.5px;color:var(--soft)}
 details.more[open] > summary{margin-bottom:12px}
@@ -200,4 +213,4 @@ body.wb-pick main *{cursor:crosshair}
 .wb-note .top a{flex:1;min-width:0;text-decoration:none}
 .wb-note .top button{border:0;background:transparent;color:var(--soft);cursor:pointer;font-size:12px;padding:0}
 .wb-note p{white-space:pre-wrap}
-@media print{.rail,.wb-dock,.wb-panel,.wb-add{display:none!important}.shell{display:block;padding:0}body{background:#fff}.board{break-inside:avoid;margin-bottom:14px}}
+@media print{.fold-body{display:flex!important;flex-direction:column;gap:18px}.fold-side{display:none!important}.rail,.wb-dock,.wb-panel,.wb-add{display:none!important}.shell{display:block;padding:0}body{background:#fff}.board{break-inside:avoid;margin-bottom:14px}}
