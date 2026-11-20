@@ -128,10 +128,11 @@
   function drawDiagrams() {
     if (!window.mermaid || !diagrams.length) { indexUnits(); return; }
     var t = {};
-    ['board', 'ink', 'soft', 'line', 'accent', 'accent-tint', 'accent-ink', 'code-bg', 'warn-tint', 'bad', 'bad-tint', 'sans'].forEach(function (k) { t[k] = token('--' + k); });
+    ['board', 'ink', 'soft', 'line', 'accent', 'accent-tint', 'accent-ink', 'code-bg', 'warn', 'warn-tint', 'bad', 'bad-tint', 'sans'].forEach(function (k) { t[k] = token('--' + k); });
     var classDefs = '\n  classDef new fill:' + t['accent-tint'] + ',stroke:' + t.accent + ',color:' + t.ink +
       '\n  classDef ext fill:' + t.board + ',stroke:' + t.soft + ',color:' + t.soft + ',stroke-dasharray:4 3' +
-      '\n  classDef risk fill:' + t['bad-tint'] + ',stroke:' + t.bad + ',color:' + t.ink + '\n';
+      '\n  classDef risk fill:' + t['bad-tint'] + ',stroke:' + t.bad + ',color:' + t.ink +
+      '\n  classDef gate fill:' + t['warn-tint'] + ',stroke:' + t.warn + ',color:' + t.ink + '\n';
     diagrams.forEach(function (d) {
       var src = d.dataset.src;
       d.removeAttribute('data-processed');

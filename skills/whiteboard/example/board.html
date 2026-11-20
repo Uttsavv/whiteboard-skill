@@ -4,7 +4,7 @@
   <div class="meta"><span>rev 2 · 2026-11-20</span><span class="chip accent">Draft</span><span class="chip warn">2 open questions</span></div>
   <ul class="changes">
     <li><a href="#data">Data</a>: dropped the separate <code>saved_filter_shares</code> table; sharing is a column.</li>
-    <li><a href="#plan">Plan</a>: sharing moved from phase 1 to phase 2.</li>
+    <li><a href="#build">Build order</a>: sharing is its own slice, after both the API and the tabs land.</li>
   </ul>
   <dl class="facts">
     <div data-tag="storage"><dt>Storage</dt><dd>Query string in Postgres<span class="muted">one row per filter, no new filter engine</span></dd><dd class="st"><span class="chip ok">Decided</span></dd></div>
@@ -201,14 +201,38 @@ sequenceDiagram
   </div>
 </section>
 
-<section class="board" id="plan" data-nav="Plan">
-  <div class="board-head"><span class="eyebrow">Plan</span><h2>Two phases, each shippable</h2></div>
+<section class="board" id="build" data-nav="Build order" data-changed>
+  <div class="board-head"><span class="eyebrow">Build order</span><h2>Four slices, two run in parallel, one human gate</h2>
+  <p class="muted">Each slice is one agent task and one PR. The API contract above is fixed, so the web slice builds against it while the backend lands.</p></div>
+  <div class="diagram" data-tag="graph">
+    <pre class="mermaid">
+flowchart LR
+  G1{{"Answer open questions"}}:::gate
+  S1["S1 · table + migration"]:::new
+  S2["S2 · endpoints + validator"]:::new
+  S3["S3 · tabs + save dialog"]:::new
+  G2{{"Review migration"}}:::gate
+  S4["S4 · team sharing"]:::new
+  G1 --> S2
+  S1 --> G2 --> S2
+  G1 --> S3
+  S2 --> S4
+  S3 --> S4
+    </pre>
+    <div class="legend"><span><i class="new"></i>Slice: one agent task, one PR</span><span><i class="gate"></i>Human gate</span></div>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>Slice</th><th>Delivers</th><th>Needs</th><th>Verified by</th><th>Review</th></tr></thead>
+    <tbody>
+      <tr data-tag="s1"><td><b>S1</b></td><td><code>saved_filters</code> table, model, migration</td><td>—</td><td>migration up and down on a copy; model tests</td><td><span class="chip warn">Careful</span> new table on prod</td></tr>
+      <tr data-tag="s2"><td><b>S2</b></td><td>Four endpoints, filter validator</td><td>S1, G1, G2</td><td>API tests: 409 on duplicate name, stale field dropped with notice, owner-only writes</td><td><span class="chip warn">Careful</span> ownership checks</td></tr>
+      <tr data-tag="s3"><td><b>S3</b></td><td>Service hooks, tab row, save dialog</td><td>G1, <a href="#api">contract</a></td><td>component tests against a mocked contract; save, reload, tap tab shows the same leads</td><td><span class="chip">Normal</span> UI, behind a flag</td></tr>
+      <tr data-tag="s4"><td><b>S4</b></td><td>Share toggle, “Team:” tabs, reorder</td><td>S2, S3</td><td>a teammate sees the tab read-only and only their own leads through it</td><td><span class="chip warn">Careful</span> data visibility</td></tr>
+    </tbody></table></div>
   <div>
-    <div class="phase" data-tag="phase-1"><div><span class="chip accent">Phase 1</span></div><div><h3>Private saved filters</h3>
-      <ul class="clean"><li>Table, four endpoints, validator.</li><li>Tab row, save dialog, rename and delete.</li></ul>
-      <p class="accept">A rep saves a filter, reloads, taps its tab and sees the same leads. Deleting a filter field from the schema does not break the list.</p></div></div>
-    <div class="phase" data-tag="phase-2" data-changed><div><span class="chip accent">Phase 2</span></div><div><h3>Team sharing and pin order</h3>
-      <ul class="clean"><li>Share toggle, “Team:” tabs, drag to reorder.</li></ul>
-      <p class="accept">A teammate sees a shared filter as a read-only tab and gets only their own leads through it.</p></div></div>
+    <div class="phase" data-tag="rollout-internal"><div><span class="chip warn">Gate</span></div><div><h3>Ship behind <code>saved_filters</code> flag, internal users</h3>
+      <p class="accept">A week of internal use with no stale-filter errors in logs.</p></div></div>
+    <div class="phase" data-tag="rollout-all"><div><span class="chip warn">Gate</span></div><div><h3>Turn on for all reps</h3>
+      <p class="accept">Flag removed in a follow-up PR once on for everyone.</p></div></div>
   </div>
 </section>

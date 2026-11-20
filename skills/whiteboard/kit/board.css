@@ -115,6 +115,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 .legend i.new{background:var(--accent-tint);border-color:var(--accent)}
 .legend i.ext{background:var(--board);border-style:dashed;border-color:var(--soft)}
 .legend i.risk{background:var(--bad-tint);border-color:var(--bad)}
+.legend i.gate{background:var(--warn-tint);border-color:var(--warn)}
 
 /* numbered layers and plan phases */
 .layer{display:grid;grid-template-columns:32px 1fr;gap:12px;align-items:start}

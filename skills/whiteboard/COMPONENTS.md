@@ -7,7 +7,7 @@
 A reader cites any part of the page as `#<board id>.<data-tag>`.
 
 - Board `id`: lowercase-kebab, short, stable across revisions (`flow`, `data`, `api`).
-- `data-tag`: lowercase-kebab, unique within its board, named for the thing (`eligibility-rules`, `phase-2`), so it still fits after a reorder.
+- `data-tag`: lowercase-kebab, unique within its board, named for the thing (`eligibility-rules`, `s2`), so it still fits after a reorder.
 - Untagged cards, rows, list items and diagram nodes are still taggable; the note then quotes their text. Tag whatever you expect discussion on, so the reference survives rewording.
 
 ## Hero
@@ -126,17 +126,37 @@ Escape `&`, `<`, `>` inside `pre`. `.new` green, `.chg` amber, `.del` struck thr
 
 Phone frame: `<div class="phone"><div class="screen"> <div class="m-bar">Title</div> … </div></div>`; put several in a `.mock-row`. Parts: `m-row` (add `m-col` to stack), `sk` skeleton line, `m-btn` (`ghost`), `m-pill`, `sp` spacer, `m-new` outlines what the feature adds. Real labels on the new parts, skeletons for everything unchanged. For a part the kit lacks, add a small scoped `<style>` in `board.html` built from tokens.
 
-## Numbered layers, plan phases, depth
+## Build order
+
+```html
+<section class="board" id="build" data-nav="Build order">
+  <div class="board-head"><span class="eyebrow">Build order</span><h2>Four slices, two run in parallel, one human gate</h2></div>
+  <div class="diagram" data-tag="graph"><pre class="mermaid">
+flowchart LR
+  G1{{"Answer open questions"}}:::gate
+  S1["S1 · table + migration"]:::new
+  S2["S2 · endpoints"]:::new
+  G1 --> S2
+  S1 --> S2
+  </pre>
+  <div class="legend"><span><i class="new"></i>Slice: one agent task, one PR</span><span><i class="gate"></i>Human gate</span></div></div>
+  <div class="tbl"><table>
+    <thead><tr><th>Slice</th><th>Delivers</th><th>Needs</th><th>Verified by</th><th>Review</th></tr></thead>
+    <tbody><tr data-tag="s1"><td><b>S1</b></td><td>…</td><td>—</td><td>the test that goes red to green</td><td><span class="chip">Light</span> why</td></tr></tbody>
+  </table></div>
+  <div class="phase" data-tag="rollout-internal">
+    <div><span class="chip warn">Gate</span></div>
+    <div><h3>Rollout step</h3><p class="accept">What must be true before the next step.</p></div>
+  </div>
+</section>
+```
+
+Slices are `S1`, `S2`… and gates `G1`, `G2`… in both the graph and the table, so a note on either cites the same name. `:::gate` is a kit class for the hexagon `{{…}}` nodes. Review chips: `chip` Light or Normal, `chip warn` Careful.
+
+## Numbered layers, depth
 
 ```html
 <div class="layer"><span class="n">1</span><div><h3>Name</h3><p class="muted">What it does.</p></div></div>
-
-<div class="phase" data-tag="phase-1">
-  <div><span class="chip accent">Phase 1</span></div>
-  <div><h3>What ships</h3>
-    <ul class="clean"><li>Work item.</li></ul>
-    <p class="accept">The observable check that proves this phase is done.</p></div>
-</div>
 
 <details class="more"><summary>Full field list</summary> … </details>
 ```

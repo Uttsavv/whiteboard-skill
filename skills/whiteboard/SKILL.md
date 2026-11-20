@@ -1,6 +1,6 @@
 ---
 name: whiteboard
-description: Draw a feature's system design as an interactive whiteboard page (architecture, flows, schema, APIs, UI wireframes, plan) that doubles as its spec. Use when the user asks to whiteboard, design or plan a feature visually, wants to see what you intend to build before you build it, or pastes "Whiteboard feedback".
+description: Draw a feature's system design as an interactive whiteboard page (architecture, flows, schema, APIs, UI wireframes, build order) that doubles as its spec. Use when the user asks to whiteboard, design or plan a feature visually, wants to see what you intend to build before you build it, or pastes "Whiteboard feedback".
 ---
 
 # Whiteboard
@@ -43,7 +43,7 @@ Write `board.html`. Boards in this order, each included only when the feature ha
 8. **Files**: a tree of where the change lands, new and changed files marked.
 9. **UI**: wireframes of each new screen state, new parts outlined.
 10. **Risks**: ranked, `Must handle` before `Noted`.
-11. **Plan**: phases that each ship, each ending in an `.accept` line a reviewer can check.
+11. **Build order**: the work cut into **slices**, each one agent task and one PR, as a dependency graph plus a table of what each slice delivers, needs and is **verified by**. Mark the **human gates** (answers, reviews, migrations, flag flips) on the graph, and end with the rollout steps. See *Build order* below.
 
 Rules of the page:
 
@@ -52,11 +52,25 @@ Rules of the page:
 - **Tag what the reader will discuss.** Every board has an `id`; every card, diagram, table row, wireframe and phase worth a comment gets a short `data-tag`. The reader cites it as `#board.tag`.
 - **Mark new against existing** everywhere: diagrams, file trees, wireframes.
 - **State uncertainty as a question.** An unknown becomes a `.question`; a guess presented as fact costs the reader's trust in every other board.
-- **Plan in checks, in the reader's units.** Phases carry acceptance lines. Add time estimates only when the user asks for them.
+- **Plan for agents.** Agents build it, so order work by dependency and prove it by verification, never by calendar: no coding-time estimates, no sprint-sized phases, no "design phase" (the whiteboard is the design).
 - **Colour through tokens.** Use the kit classes and `var(--token)` so both themes and the app theme apply; keep to the restraint rules in `DESIGN-SYSTEM.md` when adding any style of your own.
 - **Keep the hero plain.** Title, one sentence on what and why, the meta line, and the key decisions as `dl.facts` rows. It orients a developer; it does not sell the feature.
 
 **Done when** every claim on the page traces to step 1, and every board has an `id`, a conclusion headline and tags on its discussable parts.
+
+### Build order
+
+The reader is deciding whether the work is cut so agents can run it safely. Make each part answer that:
+
+- **A slice is the unit an agent finishes alone**: one PR, reviewable in one sitting, leaving the app working. Cut by what can be verified on its own, usually a layer behind a contract (table, endpoints, UI against the fixed contract), and split anything an agent would need two contexts to hold.
+- **Needs** lists only real blockers: another slice, a gate, or a contract on the page. A slice that needs only a contract runs in parallel; the graph should make the parallel lanes obvious.
+- **Verified by** is the command, test or observable behaviour that goes from failing to passing when the slice is done, specific enough that an agent can write that test first.
+- **Human gates** are the only places a person is on the critical path: answering an open question, reviewing a migration or a permission change, flipping a flag, a production step. Each gets a `{{gate}}` node in the graph.
+- **Review** sizes the human effort, the scarce resource once agents write the code: `Light` (mechanical, well covered), `Normal`, or `Careful` with the reason (migration, permissions, data visibility, money). This is where the reviewer plans their attention.
+- **Durations** only for real-world waits: a rollout soak, another team, a deploy window. Coding time is not estimated; if the user asks for a date, estimate the gates and rollout, since those set it.
+- **Rollout** stays in human order (flags, cohorts, deploy order between services), since it happens in production, not in the repo.
+
+At step 7 each slice becomes one ticket and each graph edge a blocking link, so the graph is the ticket tree.
 
 ## 4. Build and look
 
@@ -93,4 +107,4 @@ Then bump `data-rev` on the hero, remove the previous revision's `data-changed` 
 
 ## 7. Settle
 
-When no open questions remain and the user calls the design settled, record it wherever the project keeps specs (follow the project's instructions; an issue tracker is the usual home): the decisions, scope, contracts and plan as text, with the whiteboard linked or attached. The whiteboard shows the design; the tracker is where the work is claimed.
+When no open questions remain and the user calls the design settled, record it wherever the project keeps specs (follow the project's instructions; an issue tracker is the usual home): the decisions, scope and contracts as the spec, and each build-order slice as its own ticket carrying its *Verified by* line, blocked by the slices and gates its *Needs* names, with the whiteboard linked. The whiteboard shows the design; the tracker is where the work is claimed.

@@ -164,6 +164,11 @@ def main():
     for sec in re.findall(r"<section\b[^>]*\bdata-fold\b[^>]*>.*?</section>", content, flags=re.S):
         if 'class="mermaid"' in sec:
             c.errors.append("a data-fold board holds a diagram; diagrams cannot draw while collapsed, so move it to an open board")
+    for sec in re.findall(r'<section\b[^>]*\bid="(?:build|plan)"[^>]*>.*?</section>', content, flags=re.S):
+        sec = sec.split('class="phase"')[0]  # rollout steps may carry real waits (a soak, a deploy window)
+        m = re.search(r"~?\b\d+(?:\.\d+)?\s*(?:-\s*\d+\s*)?(?:days?|weeks?|wks?|sprints?|months?)\b", re.sub(r"<[^>]+>", " ", sec), re.I)
+        if m:
+            c.warnings.append(f"build order has a duration (\"{m.group(0).strip()}\"); agents build it, so size slices by review effort instead; durations belong only on rollout steps")
     if c.boards > 12:
         c.warnings.append(f"{c.boards} boards: fold detail into <details class=\"more\"> or merge boards; aim for 12 or fewer")
 
